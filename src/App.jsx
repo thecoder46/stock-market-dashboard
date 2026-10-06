@@ -2,8 +2,8 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import "./App.css";
 import "./features.css";
 
-const API_URL = "http://localhost:5000";
-const WS_URL = "ws://localhost:5000/ws/market";
+const API_URL = "https://stock-market-api1.onrender.com";
+const WS_URL = "wss://stock-market-api1.onrender.com/ws/market";
 const NIFTY_KEY = "NSE_INDEX|Nifty 50";
 
 const INDEXES = [
