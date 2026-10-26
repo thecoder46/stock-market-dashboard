@@ -1,33 +1,28 @@
 import express from "express";
-import { searchInstruments } from "./instrumentSearch.js";
 
 const router = express.Router();
 
-router.get("/instruments/search", async (req, res) => {
-  try {
-    const query = String(req.query.query || "").trim();
-
-    if (!query) {
-      return res.status(400).json({
-        success: false,
-        message: "Search query is required",
-      });
+router.get("/", (req, res) => {
+  res.json({
+    success: true,
+    message: "Stock Market Dashboard API is running",
+    timestamp: Date.now(),
+    endpoints: {
+      health: "/api",
+      quotes: "/api/quotes",
+      subscriptions: "/api/subscriptions",
+      subscribe: "POST /api/subscribe",
+      unsubscribe: "POST /api/unsubscribe",
+      ipos: "/api/ipos",
+      candles: "/api/candles/:instrumentKey",
+      analysis: "/api/analysis/:instrumentKey",
+      news: "/api/news/:instrumentKey",
+      marketContext: "/api/market-context",
+      scanner: "POST /api/scanner",
+      backtest: "/api/backtest/:instrumentKey",
+      websocket: "/ws/market"
     }
-
-    const data = await searchInstruments(query);
-
-    res.json({
-      success: true,
-      data,
-    });
-  } catch (error) {
-    console.error("Instrument search error:", error);
-
-    res.status(500).json({
-      success: false,
-      message: "Unable to search instruments",
-    });
-  }
+  });
 });
 
 export default router;

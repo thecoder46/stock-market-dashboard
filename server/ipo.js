@@ -4,8 +4,34 @@ const ipoRouter = express.Router();
 
 ipoRouter.get("/", async (req, res) => {
   try {
-    const status = req.query.status || "open";
-    const issueType = req.query.issue_type || "";
+    const accessToken = process.env.UPSTOX_ACCESS_TOKEN;
+
+    if (!accessToken) {
+      return res.status(500).json({
+        success: false,
+        message: "Upstox access token is not configured"
+      });
+    }
+
+    const allowedStatuses = new Set([
+      "open",
+      "upcoming",
+      "closed",
+      "listed"
+    ]);
+
+    const status = String(req.query.status || "open").toLowerCase();
+    const issueType = req.query.issue_type
+      ? String(req.query.issue_type).toLowerCase()
+      : "";
+
+    if (!allowedStatuses.has(status)) {
+      return res.status(400).json({
+        success: false,
+        message:
+          "Invalid status. Use open, upcoming, closed, or listed."
+      });
+    }
 
     const params = new URLSearchParams({
       status,
@@ -17,32 +43,42 @@ ipoRouter.get("/", async (req, res) => {
       params.set("issue_type", issueType);
     }
 
-    const response = await fetch(
-      `https://api.upstox.com/v2/ipos?${params.toString()}`,
-      {
-        method: "GET",
-        headers: {
-          Accept: "application/json",
-          Authorization: `Bearer ${process.env.UPSTOX_ACCESS_TOKEN}`
-        }
+    const url =
+      `https://api.upstox.com/v2/ipos?${params.toString()}`;
+
+    const response = await fetch(url, {
+      method: "GET",
+      headers: {
+        Accept: "application/json",
+        Authorization: `Bearer ${accessToken}`
       }
-    );
+    });
 
     const data = await response.json();
 
-    console.log("IPO API status:", response.status);
-
     if (!response.ok) {
-      console.error("IPO API response:", data);
-      return res.status(response.status).json(data);
+      console.error("Upstox IPO API error:", data);
+
+      return res.status(response.status).json({
+        success: false,
+        message: "Unable to fetch IPO data",
+        error: data
+      });
     }
 
-    res.json(data);
+    return res.json({
+      success: true,
+      status,
+      issueType: issueType || null,
+      data: data?.data ?? [],
+      metadata: data?.metadata ?? null,
+      timestamp: Date.now()
+    });
   } catch (error) {
     console.error("IPO API error:", error);
 
-    res.status(500).json({
-      status: "error",
+    return res.status(500).json({
+      success: false,
       message: error.message
     });
   }
